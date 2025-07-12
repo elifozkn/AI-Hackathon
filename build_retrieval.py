@@ -23,7 +23,6 @@ EMBED_MODEL = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
 
 
 def load_index():
-    build_if_missing()
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     faiss_path = os.path.join(BASE_DIR, "vector_index.faiss")
     index = faiss.read_index(faiss_path)

@@ -33,7 +33,7 @@ def build_team():
     ticket_classifier_agent = AssistantAgent(
         name="ticket_classifier",
         model_client=model_client,
-        system_message="Classify whether the ticket is relevant to Advantech technical support respond with RELEVANT.The ticket is If not,respond with NOT RELEVANT.",
+        system_message="Classify whether the ticket is relevant to Advantech technical support respond with  a json : {RELEVANT : TRUE} . The ticket is If not,respond with {RELEVANT : FALSE}",
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )
@@ -54,27 +54,24 @@ For each subquery:
 2. Extract the **product model** mentioned (e.g., AFE-3600).
 3. Extract terms which could match the metadata stored in the KB could be specs, product name, keyword, etc. 
 4. Classify the intent into one of:
-   - spec_request
-   - instruction
-   - troubleshooting
-   - product information
-   - product discovery
+   - spec_request : when the user asks for specifications of a product 
+   - instruction : when the user asks for some instructions, how-to s regarding a product
+   - troubleshooting : when the user asks for instructions to troubleshoot the issue they have
+   - product information : when the user asks for detail about the attributes/features of a product
+   - product discovery : when the user is trying to explore the available products, given a attribute/usecase of interest 
    - other
+5. State the source to search on. If intent is spec_request, product information, or discovery it should be "Products Features JSON and Datasheet" 
+If intent is instruction or troubleshooting, it should be "Product Manual" 
+5. Extract other related metadata if available. 
+Respond in json format and make sure include all keys. If there are multiple intents, use separate json. : 
 
-Respond clearly with bullet points for each subquery, in this format:
-
----
-Subquery 1:
-- 🪄Rewritten Query: ... \n
-- 🖥️Product Model: ...\n
--🔍 Intent: ...\n
-- 🗄️ Related metadata : 
-
-Subquery 2:
-- 🪄Rewritten Query: ...\n
-- 🖥️Product Model: ...\n
-- 🔍Intent: ...
--🗄️ Related Metadata : 
+{**intent**:  , 
+**topic** : ,
+**search_source**: ,
+**product_name**: ,
+**model_name**: , 
+**obsolete: False**, 
+}
 
 ... and so on.''',
         reflect_on_tool_use=True,
@@ -84,12 +81,9 @@ Subquery 2:
     retriever = AssistantAgent(
         name="retriever_agent",
         model_client=model_client,
-        system_message="""In the beginning of your response say "Here's what I found in the knowledge base 🔍 : " 
-        
-        Given the user ticket and the relevant product, retrieve relevant documents from the internal knowledge base. Make sure to provide as much as detail as possible from the retrieved context. Do not add additional interpretation.Ignore non-informative chunks such as section descriptions.After retrieval respond with : 
-          - if you have found relevant information. \n
-          - name the source along with the product name related to the source (manual,specs,features etc.) \n
-          - what you have found (bullet point list each point should end with \n). 
+        system_message="""  
+        Given the user ticket and the relevant product, retrieve relevant documents from the internal knowledge base. Make sure to provide as much as detail as possible from the retrieved context. In the end provide the source inside square brackets [SOURCE:]  Do not add additional interpretation.Ignore non-informative chunks such as section descriptions.After retrieval respond with : 
+          - list down the relevant contexts in a clear, precise language, mention as much detail as possible while staying faithful to the documentation. 
             """,
         tools=[retrieve],
         reflect_on_tool_use=True,
@@ -116,9 +110,10 @@ Subquery 2:
 
     text_termination = TextMentionTermination("APPROVE")
     text_termination1 = TextMentionTermination("NOT RELEVANT")
+    text_termination2 = TextMentionTermination('FALSE')
     external_termination = ExternalTermination()
 
-    team = RoundRobinGroupChat([ticket_classifier_agent, retriever,responder_agent,evaluator_agent], termination_condition=external_termination|text_termination|text_termination1)
+    team = RoundRobinGroupChat([ticket_classifier_agent, ticket_analyzer_agent, retriever,responder_agent,evaluator_agent], termination_condition=external_termination|text_termination|text_termination1 | text_termination2)
     return team
 # Run the agent and stream the messages to the console.
 # When running inside a script, use a async main function and call it from `asyncio.run(...)`.

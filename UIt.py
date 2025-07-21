@@ -8,7 +8,7 @@ from agents import build_team  # ensure this returns a fresh instance
 import time
 
 nest_asyncio.apply()
-st.set_page_config(page_title="🧠 Advantech Ticket Analyzer", layout="centered")
+st.set_page_config(page_title="🧠 Advantech Agentic Technical Support", layout="centered")
 
 # ---------- Custom CSS ----------
 st.markdown("""
@@ -26,6 +26,19 @@ st.markdown("""
         font-family: 'Segoe UI', sans-serif;
         box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
+            
+
+  .gray-box {
+    background-color: #f2f2f2;
+    padding: 1.2em;
+    border-radius: 10px;
+    margin-top: 0.5em;
+    font-family: 'Segoe UI', sans-serif;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+
+
     .sticky-header {
     position: sticky;
     top: 0;
@@ -159,8 +172,22 @@ if "ticket_chosen" not in st.session_state:
     st.session_state.ticket_chosen = False
 
 if not st.session_state.ticket_chosen:
-    st.markdown("### 🎫 Select a Customer Ticket to Analyze")
+    st.markdown(f"""
+        <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
+            <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{1}</div>
+            <div style='font-weight: 600; color: #444;'>Please select a ticket</div>
+            <div style='font-size: 0.85rem; color: #666;'>select</div>
+        </div>
+    """, unsafe_allow_html=True)
+
     selected_option = st.radio("Choose one:", list(ticket_options.keys()), key="ticket_choice")
+
+    # Show content of selected ticket in gray box immediately
+    st.markdown(f"""
+        <div class="gray-box">
+            <pre style="white-space: pre-wrap; font-size: 0.9rem; color: #222; margin: 0;">{ticket_options[selected_option]}</pre>
+        </div>
+    """, unsafe_allow_html=True)
 
     if st.button("▶️ Start Agentic Flow"):
         st.session_state.selected_ticket = selected_option
@@ -168,11 +195,25 @@ if not st.session_state.ticket_chosen:
         st.session_state.ticket_chosen = True
         st.rerun()
 else:
-    st.markdown(f"#### 📨 Selected Ticket:\n```\n{st.session_state.selected_ticket}\n```")
-    run_button = st.button("▶️ Start Agentic Flow")
+    st.markdown(f"""
+        <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
+            <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{1}</div>
+            <div style='font-weight: 600; color: #444;'>📨 Ticket :</div>
+            <div style='font-size: 0.85rem; color: #666;'>User inquiry selected:</div>
+        </div>
+        <div class="gray-box">
+            <div style='font-size: 0.9rem; color: #222; white-space: pre-wrap;'>{st.session_state.query}</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    if run_button and st.session_state.query.strip():
+    st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
+
+
+    
+    # Automatically start flow if not already started
+    if not st.session_state.agent_steps:
         run_async(run_agent_flow(st.session_state.query))
+
 
 if "agent_steps" not in st.session_state:
     st.session_state.agent_steps = []
@@ -210,9 +251,11 @@ step_descriptions = {
 }
 
 if st.session_state.agent_steps:
-    for i in range(st.session_state.step_index + 1):
-        step = st.session_state.agent_steps[i]
+    for i, step in enumerate(st.session_state.agent_steps[:st.session_state.step_index + 1]):
         agent_key = step[1]
+        if agent_key == "user":
+            continue  # Skip this step
+
         full_text = step[2]
         agent_name = agent_display_names.get(agent_key, agent_key.replace("_", " ").title())
         description = step_descriptions.get(agent_key, "Running agent task...")
@@ -235,12 +278,22 @@ if st.session_state.agent_steps:
             typed_text = ""
             for char in full_text:
                 typed_text += char
-                placeholder.markdown(f"<div style='font-size: 0.9rem; color: #222; margin-left: 1em;'>{typed_text}</div>", unsafe_allow_html=True)
+                placeholder.markdown(f"""
+                <div class="gray-box">
+                    <div style='font-size: 0.9rem; color: #222;'>{typed_text}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
                 time.sleep(0.02)
             st.session_state.step_shown = True
         else:
-            # For previous steps, just show full text immediately
-            st.markdown(f"<div style='font-size: 0.9rem; color: #222; margin-left: 1em;'>{full_text}</div>", unsafe_allow_html=True)
+          
+            st.markdown(f"""
+                <div class="gray-box">
+                    <div style='font-size: 0.9rem; color: #222;'>{full_text}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
 
         if i < st.session_state.step_index:
             st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
@@ -248,8 +301,7 @@ if st.session_state.agent_steps:
         # Save outputs if needed
         if agent_key == 'responder_agent':
             st.session_state.responder_agent_message = full_text
-        if agent_key == 'user':
-            st.session_state.user_inquiry = full_text
+
 
     # Check for approval and send to Teams
     last_step = st.session_state.agent_steps[-1]
@@ -272,12 +324,46 @@ if st.session_state.agent_steps:
             st.rerun()
 
     else:
+                # Show arrow before final step
         st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
+
+        # Step header (like other steps)
         st.markdown(f"""
-            <div class='footer-step'>
-                ✅ Response Approved<br>
-                📤 Draft sent to Technical Support for final review via Microsoft Teams.
+            <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
+                <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{7}</div>
+                <div style='font-weight: 600; color: #444;'>Agent Approval</div>
+                <div style='font-size: 0.85rem; color: #666;'>Final step: approval and draft sent confirmation.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # Message in gray box
+        st.markdown(f"""
+            <div class="gray-box">
+                <div style="font-size: 0.9rem; color: #222;">
+                    ✅ Response Approved<br>
+                    📤 Draft sent to Technical Support for final review via Microsoft Teams.
+                    Waiting for approval... 
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+
+        # Step header (like other steps)
+        st.markdown(f"""
+            <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
+                <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{8}</div>
+                <div style='font-weight: 600; color: #444;'>Send reminder email</div>
+                <div style='font-size: 0.85rem; color: #666;'>Final step: approval and draft sent confirmation.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # Message in gray box
+        st.markdown(f"""
+            <div class="gray-box">
+                <div style="font-size: 0.9rem; color: #222;">
+                    ✅ Sent reminder email on outlook for final approval of the draft<br>
+                    Waiting for approval... 
+                </div>
             </div>
         """, unsafe_allow_html=True)
         st.session_state.flow_completed = True
-

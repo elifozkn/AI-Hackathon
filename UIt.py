@@ -125,9 +125,9 @@ async def run_agent_flow(query: str):
 # ---------- UI ----------
 #query = st.text_area("Incoming email content:", height=200, placeholder="e.g. Hello, my ARK-1123 is overheating...")
 ticket_options = {
-    "Ticket 1 - AFE-R360 Serial Redirection": """Dear Advantech Support Team,
+    "Ticket 1 - ARK-11 Password Configuration ": """Dear Advantech Support Team,
 
-I have recently purchased AFE-R360. I cannot find any information about serial port redirection. Can you help me how to redirect it?
+I have recently purchased ARK-11. I cannot find any information about re-setting the admin password and whether BIOS lock is supported by the device. I would be grateful if you could provide me information of admin password change and the lock for BIOS. 
 
 Kind regards,""",
     

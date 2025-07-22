@@ -138,29 +138,49 @@ async def run_agent_flow(query: str):
 # ---------- UI ----------
 #query = st.text_area("Incoming email content:", height=200, placeholder="e.g. Hello, my ARK-1123 is overheating...")
 ticket_options = {
-    "Ticket 1 - ARK-11 Password Configuration ": """Dear Advantech Support Team,
+    "Ticket 1 - ARK-11 Password Configuration ": {
+        "sender": "Emily Zhao",
+        "email": "emily.zhao@iot-solutions.com",
+        "timestamp": "2025-07-18 09:21 AM",
+        "body": """Dear Advantech Support Team,
 
 I have recently purchased ARK-11. I cannot find any information about re-setting the admin password and whether BIOS lock is supported by the device. I would be grateful if you could provide me information of admin password change and the lock for BIOS. 
 
-Kind regards,""",
-    
-    "Ticket 2 - UNO-2271G Overheating Issue": """Hi Support,
+Kind regards,"""
+    },
 
-Our customer reports that the UNO-2271G unit is overheating after 3 hours of operation. Could you suggest any cooling alternatives or common causes?
+    "Ticket 2 - AIMB-217 Technical Information Inquiry": {
+        "sender": "David Kim",
+        "email": "david.kim@sysperf.com",
+        "timestamp": "2025-07-18 10:43 AM",
+        "body": """Hi Support,
 
-Thanks,""",
-    
-    "Ticket 3 - AIR-150": """Hello Advantech,
+I'm looking into the AIMB-217 board. I'm working on system-level performance tracing and I have a few questions about using blktrace and perf. For blktrace, could you explain how to properly configure buffer size and count u, and how to limit event types? I'm also curious about how to stream live output using blkparse, and whether there's a recommended way to set a trace duration with -w. As for perf, I'm particularly interested in tracing dynamic system events. could you elaborate on how to collect things like stack traces or profiling specific tasks? Any best practices for combining these tools efficiently would be really helpful!
 
-I have recently purchased AIR-150. I cant find the instruction on SATA installation. Could you provide me instructions on that? 
+Thanks,"""
+    },
 
-Regards,""",
-    
-    "Ticket 4 - BIOS Update for EPC-S202": """Dear Support Team,
+    "Ticket 3 - ADAM-3600 ": {
+        "sender": "Isabella Rossi",
+        "email": "isabella.rossi@indcontrol.net",
+        "timestamp": "2025-07-17 04:17 PM",
+        "body": """Dear Advantech,
 
-Is there a newer BIOS version for EPC-S202 that supports Wake-on-LAN? I'm using version 1.03 currently.
+Hi, I'm evaluating the ADAM-3600-C2GL1A1E for an industrial IoT project and wanted to confirm some of its capabilities. Could you please provide detailed information on its power requirements? I'm also interested in the CPU specs, memory configuration, supported protocols, OS compatibility, and available expansion slots. Does it also include a VGA video port, and what certifications does it carry? Thanks!
+
+Regards,"""
+    },
+
+    "Ticket 4 - Price Inquiry for UNO": {
+        "sender": "Liam Becker",
+        "email": "liam.becker@procurelogic.com",
+        "timestamp": "2025-07-19 08:08 AM",
+        "body": """Dear Support Team,
+
+I'm interested in purchasing an UNO computer. Could you inform me about the prices and help me to compare between different models ? 
 
 Thanks in advance,"""
+    }
 }
 
 # Initialize selected ticket and UI display control
@@ -182,12 +202,36 @@ if not st.session_state.ticket_chosen:
 
     selected_option = st.radio("", list(ticket_options.keys()), key="ticket_choice")
 
-    # Show content of selected ticket in gray box immediately
+    # Extract structured data
+    ticket_data = ticket_options[selected_option]
+    sender = ticket_data["sender"]
+    email = ticket_data["email"]
+    timestamp = ticket_data["timestamp"]
+    body = ticket_data["body"]
+
+    # Show fake email format in gray box
     st.markdown(f"""
         <div class="gray-box">
-            <pre style="white-space: pre-wrap; font-size: 0.9rem; color: #222; margin: 0;">{ticket_options[selected_option]}</pre>
+            <div style='
+                font-size: 0.7rem;
+                color: #222;
+                white-space: pre-wrap;
+            '>
+                <b>From:</b> {sender} &lt;{email}&gt;<br>
+                <b>To:</b> Advantech Support &lt;support@advantech.com&gt;<br>
+                <b>Date:</b> {timestamp}<br>
+                <b>Subject:</b> {selected_option}<br><br>
+                {body}
+            </div>
         </div>
     """, unsafe_allow_html=True)
+
+
+    # Save state
+    st.session_state.selected_ticket = selected_option
+    st.session_state.query = body
+
+
 
     if st.button("▶️ Start Agentic Flow"):
         st.session_state.selected_ticket = selected_option
@@ -202,17 +246,15 @@ else:
             <div style='font-size: 0.85rem; color: #666;'>User Email :</div>
         </div>
         <div class="gray-box">
-            <div style='font-size: 0.9rem; color: #222; white-space: pre-wrap;'>{st.session_state.query}</div>
+            <div style='font-size: 0.9rem; color: #222; white-space: pre-wrap;'>{st.session_state.query['body']}</div>
         </div>
     """, unsafe_allow_html=True)
 
     st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
 
-
-    
     # Automatically start flow if not already started
     if not st.session_state.agent_steps:
-        run_async(run_agent_flow(st.session_state.query))
+        run_async(run_agent_flow(st.session_state.query['body']))
 
 
 if "agent_steps" not in st.session_state:
@@ -304,10 +346,18 @@ if st.session_state.agent_steps:
 
     # Check for approval and send to Teams
     last_step = st.session_state.agent_steps[-1]
+
+    # 1. Set ticket relevance
+    if last_step[1] == 'ticket_classifier' and 'FALSE' in last_step[2].upper():
+        st.session_state.ticket_relevant = False
+    else: 
+        st.session_state.ticket_relevant = True
+
+    # 2. Send to Teams if evaluator approved
     if last_step[1] == "evaluator_agent" and 'APPROVE' in last_step[2].upper():
         webhook_url = "https://advantecho365.webhook.office.com/webhookb2/c81b03f5-93bb-41f9-bdbe-26e3600b9a42@a77d40d9-dcba-4dda-b571-5f18e6da853f/IncomingWebhook/2dcafd747c2243f695b4279157d8dc41/f4cdb5a2-8613-44fe-81c7-5e3ee2c909b8/V2ZFfDvGZVE4pdmzX5xI00IdIpFgT6LEo2r_-L3d0q8XE1"
         payload = {
-            "text": f"User Inquiry 📧: \n {st.session_state.get('user_inquiry')}\n\n\n--------------------------\n\n🧠 Responder Agent Output:\n\n{st.session_state.get('responder_agent_message', 'No responder message found')}"
+            "text": f" Date : {st.session_state.get('query')['timestamp']} \n Sender : {st.session_state.get('query')['email']}\n\n\n\n--------------------------\n\n User Inquiry 📧: \n {st.session_state.get('query')['body']}\n\n\n--------------------------\n\n🧠 Responder Agent Output:\n\n{st.session_state.get('responder_agent_message', 'No responder message found')}"
         }
         try:
             response = requests.post(webhook_url, json=payload)
@@ -315,54 +365,65 @@ if st.session_state.agent_steps:
         except Exception as e:
             print("Failed to send message to Teams:", e)
 
-
-    if not st.session_state.flow_completed and st.session_state.step_index < len(st.session_state.agent_steps) - 1:
+    # 3. Step-by-step flow controller
+    if not st.session_state.get("flow_completed", False) and st.session_state.step_index < len(st.session_state.agent_steps):
         if st.button("➡️ Proceed"):
             st.session_state.step_index += 1
-            st.session_state.step_shown = False  # Reset for next step animation
+            st.session_state.step_shown = False  # Reset animation
             st.rerun()
 
-    else:
-                # Show arrow before final step
+    # 4. Hardcoded last steps
+    if st.session_state.step_index >= len(st.session_state.agent_steps):
         st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
 
-        # Step header (like other steps)
-        st.markdown(f"""
-            <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
-                <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{7}</div>
-                <div style='font-weight: 600; color: #444;'>Agent Approval</div>
-                <div style='font-size: 0.85rem; color: #666;'>If the Evaluator Agent approves the answer, the response is then sent to the Technical Support Domain Experts through Microsoft Teams for human validation.</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Message in gray box
-        st.markdown(f"""
-            <div class="gray-box">
-                <div style="font-size: 0.9rem; color: #222;">
-                    ✅ Response Approved by the Evaluator Agent.  <br>
-                    📤 Draft sent to Technical Support for final review via Microsoft Teams.
-                    Waiting for approval... 
+        if st.session_state.get("ticket_relevant", True):
+            # STEP 7 – Agent Approval
+            st.markdown(f"""
+                <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
+                    <div style='font-weight: bold; font-size: 0.9rem;'>STEP #7</div>
+                    <div style='font-weight: 600; color: #444;'>Agent Approval</div>
+                    <div style='font-size: 0.85rem; color: #666;'>If the Evaluator Agent approves the answer, the response is then sent to the Technical Support Domain Experts through Microsoft Teams for human validation.</div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-
-        # Step header (like other steps)
-        st.markdown(f"""
-            <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
-                <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{8}</div>
-                <div style='font-weight: 600; color: #444;'>Send reminder email</div>
-                <div style='font-size: 0.85rem; color: #666;'>Once the response draft is sent through teams to domain experts, the agentic flow also sends a reminder email indicating that there is a new response draft waiting to be approved. This step makes sure the team is being updated about the status of the tickets. </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Message in gray box
-        st.markdown(f"""
-            <div class="gray-box">
-                <div style="font-size: 0.9rem; color: #222;">
-                    ✅ Sent reminder email on outlook for final approval of the draft<br>
-                    Waiting for approval... 
+            st.markdown(f"""
+                <div class="gray-box">
+                    <div style="font-size: 0.9rem; color: #222;">
+                        ✅ Response Approved by the Evaluator Agent.  <br>
+                        📤 Draft sent to Technical Support for final review via Microsoft Teams.
+                        Waiting for approval... 
+                    </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+            st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
+            # STEP 8 – Reminder Email
+            st.markdown(f"""
+                <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
+                    <div style='font-weight: bold; font-size: 0.9rem;'>STEP #8</div>
+                    <div style='font-weight: 600; color: #444;'>Send reminder email</div>
+                    <div style='font-size: 0.85rem; color: #666;'>Once the response draft is sent through Teams to domain experts, the agentic flow also sends a reminder email indicating that there is a new response draft waiting to be approved. This step makes sure the team is being updated about the status of the tickets.</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+                <div class="gray-box">
+                    <div style="font-size: 0.9rem; color: #222;">
+                        ✅ Sent reminder email on Outlook for final approval of the draft<br>
+                        Waiting for approval... 
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        else:
+            # Not relevant path
+            st.markdown(f"""
+                <div class="gray-box">
+                    <div style="font-size: 0.9rem; color: #222;">
+                        ⚠️ This ticket has been classified as <b>not relevant to Technical Support</b>.<br>
+                        🛑 No further agent processing is needed.
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
         st.session_state.flow_completed = True
+

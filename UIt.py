@@ -97,10 +97,10 @@ with logo_col:
 with header_col:
     st.markdown("""
         <h2 style='margin: 0; padding-left: 10px; line-height: 1.2;'>
-            Advantech Technical Support Agent
+            Advantech Agent AI Based Technical support
         </h2>
         <p style='color: gray; margin-top: 0; font-size: 1rem; padding-left: 10px;'>
-            Technical Support Reasoning Flow
+            Agentic Reasoning Flow
         </p>
     """, unsafe_allow_html=True)
 
@@ -175,12 +175,12 @@ if not st.session_state.ticket_chosen:
     st.markdown(f"""
         <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
             <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{1}</div>
-            <div style='font-weight: 600; color: #444;'>Please select a ticket</div>
-            <div style='font-size: 0.85rem; color: #666;'>select</div>
+            <div style='font-weight: 600; color: #444;'>📨 Retrive User Inquiry Email from Ticketing System</div>
+            <div style='font-size: 0.85rem; color: #666;'>AI Agent retrieves ticket from the ticketing system (e.g Salesforce, Zendesk) through webhook protocol. As this demonstration act as a proof of concept, the connection is not yet available. For this purpose, we provide a list of emails that simulate the user tickets sent to the ticketing system below. Please select a ticket to proceed with the agentic flow. </div>
         </div>
     """, unsafe_allow_html=True)
 
-    selected_option = st.radio("Choose one:", list(ticket_options.keys()), key="ticket_choice")
+    selected_option = st.radio("", list(ticket_options.keys()), key="ticket_choice")
 
     # Show content of selected ticket in gray box immediately
     st.markdown(f"""
@@ -198,8 +198,8 @@ else:
     st.markdown(f"""
         <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
             <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{1}</div>
-            <div style='font-weight: 600; color: #444;'>📨 Ticket :</div>
-            <div style='font-size: 0.85rem; color: #666;'>User inquiry selected:</div>
+            <div style='font-weight: 600; color: #444;'>📨 Retrive User Inquiry Email from Ticketing System :</div>
+            <div style='font-size: 0.85rem; color: #666;'>User Email :</div>
         </div>
         <div class="gray-box">
             <div style='font-size: 0.9rem; color: #222; white-space: pre-wrap;'>{st.session_state.query}</div>
@@ -235,19 +235,19 @@ if "step_shown" not in st.session_state:
 agent_display_names = {
     "ticket_classifier": "🤖 Classify Ticket",
     "ticket_analyzer": "🤖 Analyze Ticket",
-    "retriever_agent": "🤖 Search Information using Agentic RAG",
+    "retriever_agent": "🤖 Search Information using Agentic Retrieval",
     "responder_agent": "🤖 Draft Response",
-    "evaluator_agent": "🤖Evaluator Agent",
-    "user": " 📧 Receive Incoming Ticket"
+    "evaluator_agent": "🤖 Evaluate Draft",
+    "user": " 📧 Receive Ticket from the Ticketing System"
 }
 
 step_descriptions = {
-    'ticket_classifier': 'Checking if the ticket is relevant and could be answered by Advantech Technical Support Team...',
-    'ticket_analyzer': 'Detecting the intent and analyzing the request to narrow down the documents to be searched...',
-    'retriever_agent': 'Performing search over the knowledge base for relevant information...',
-    'responder_agent': 'Writing the user-friendly response based on retrieved information...',
-    'evaluator_agent': 'Evaluating the quality and relevance of the response...',
-    'user': 'Retrieving user inquiry from Outlook.'
+    'ticket_classifier': 'Many tickets, regarding topics are being created on the ticketing system and not all of them are related to Technical Support. Thus, in the second step, Ticket Classifier identifies if the retrieved ticket could be answerable by the Technical Support Team.',
+    'ticket_analyzer': 'Once classified as relevant, the ticket is analyzed by the Ticket Analyzer Agent. In this step the agent breaks down the ticket and identifies the user intent, main topic, product name, related metadata (if available). This process is the starting point of Agentic Retrieval which aims to narrow down the search space prior to semantic search to enhance retrieval capability.',
+    'retriever_agent': 'Following ticket analysis, Retriever Agent, first applies filter on the documents to be searched based on the extracted information in the previous step. The filtering ensures that the search step is narrowed down by only involving the most relevant documents and chunks. \n After filtering process, Retrieval Agent performs semantic ranking and vector search to retrieve the most relevant information to user inquiry.',
+    'responder_agent': 'Once the information from the knowledge base is retrieved, the Responder Agent drafts a user-friendly response. In the drafting process, the user intent, inquiry and the retrieved information is taken into consideration. No additional information is given and the drafter is restricted to not fabricate information which is not present in the retrieved information.',
+    'evaluator_agent': 'In this step, an Evaluator Agent assesses the quality, relevance and the correctness of the drafted response. The evaluation criteria is based on whether the drafted answer answers the question, and whether the response is faithful to the retrieved information from the knowledge base. This evaluation is the very first step in the validation of the response. ',
+    'user': 'AI Agent retrieves ticket from the ticketing system (e.g Salesforce, Zendesk) through webhook protocol. As this demonstration act as a proof of concept, the connection is not yet available. For this purpose, we provide a list of emails that simulate the user tickets sent to the ticketing system below : '
 }
 
 if st.session_state.agent_steps:
@@ -267,7 +267,6 @@ if st.session_state.agent_steps:
                 <div style='font-weight: 600; color: #444;'>{agent_name}</div>
                 <div style='font-size: 0.85rem; color: #666;'>{description}</div>
                 <div style='font-size: 0.9rem; color: #222; margin-top: 0.5em;'>
-                    <b>Outcome:</b> 
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -332,7 +331,7 @@ if st.session_state.agent_steps:
             <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
                 <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{7}</div>
                 <div style='font-weight: 600; color: #444;'>Agent Approval</div>
-                <div style='font-size: 0.85rem; color: #666;'>Final step: approval and draft sent confirmation.</div>
+                <div style='font-size: 0.85rem; color: #666;'>If the Evaluator Agent approves the answer, the response is then sent to the Technical Support Domain Experts through Microsoft Teams for human validation.</div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -340,7 +339,7 @@ if st.session_state.agent_steps:
         st.markdown(f"""
             <div class="gray-box">
                 <div style="font-size: 0.9rem; color: #222;">
-                    ✅ Response Approved<br>
+                    ✅ Response Approved by the Evaluator Agent.  <br>
                     📤 Draft sent to Technical Support for final review via Microsoft Teams.
                     Waiting for approval... 
                 </div>
@@ -353,7 +352,7 @@ if st.session_state.agent_steps:
             <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
                 <div style='font-weight: bold; font-size: 0.9rem;'>STEP #{8}</div>
                 <div style='font-weight: 600; color: #444;'>Send reminder email</div>
-                <div style='font-size: 0.85rem; color: #666;'>Final step: approval and draft sent confirmation.</div>
+                <div style='font-size: 0.85rem; color: #666;'>Once the response draft is sent through teams to domain experts, the agentic flow also sends a reminder email indicating that there is a new response draft waiting to be approved. This step makes sure the team is being updated about the status of the tickets. </div>
             </div>
         """, unsafe_allow_html=True)
 

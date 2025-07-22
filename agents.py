@@ -70,7 +70,6 @@ Respond in json format and make sure include all keys. If there are multiple int
 **search_source**: ,
 **product_name**: ,
 **model_name**: , 
-**obsolete: False**, 
 }
 
 ... and so on.''',
@@ -110,14 +109,18 @@ Respond in json format and make sure include all keys. If there are multiple int
 
     text_termination = TextMentionTermination("APPROVE")
     text_termination1 = TextMentionTermination("NOT RELEVANT")
-    text_termination2 = TextMentionTermination('FALSE')
+    text_termination2 = TextMentionTermination('false')
+    text_termination3 = TextMentionTermination('FALSE')
     external_termination = ExternalTermination()
 
-    team = RoundRobinGroupChat([ticket_classifier_agent, ticket_analyzer_agent, retriever,responder_agent,evaluator_agent], termination_condition=external_termination|text_termination|text_termination1 | text_termination2)
+    team = RoundRobinGroupChat([ticket_classifier_agent, ticket_analyzer_agent, retriever,responder_agent,evaluator_agent], termination_condition=external_termination|text_termination|text_termination1 | text_termination2 | text_termination3)
     return team
 # Run the agent and stream the messages to the console.
 # When running inside a script, use a async main function and call it from `asyncio.run(...)`.
 #asyncio.run(team.reset())# Reset the team for a new task.
+
+
+
 
 
 

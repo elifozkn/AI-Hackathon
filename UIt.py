@@ -575,6 +575,7 @@ if st.session_state.agent_steps:
                             <div>
                                 <div style="font-weight: bold; font-size: 1.05rem;">Outlook Notification</div>
                                 <div style="font-size: 0.9rem; margin-top: 0.4em;">
+                                    <b>From:</b> ai-agent-technical-support@advantech.com <br>
                                     <b>Subject:</b>Approved Content Sent to the Customer<br>
                                     <b>Date:</b> {formatted_now}<br>
                                     <b>Notes:</b> This notification is to update you that the approved response to customer ticket has been send to customer@company.com
@@ -606,6 +607,7 @@ if st.session_state.agent_steps:
                             <div>
                                 <div style="font-weight: bold; font-size: 1.05rem;">Outlook Reminder</div>
                                 <div style="font-size: 0.9rem; margin-top: 0.4em;">
+                                    <b>From:</b> ai-agent-technical-support@advantech.com <br>
                                     <b>Subject:</b> Follow-up on Support Team Draft<br>
                                     <b>Date:</b> {formatted_now}<br>
                                     <b>Notes:</b> Please review and respond to the AI-generated draft.

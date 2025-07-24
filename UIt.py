@@ -260,7 +260,7 @@ if not st.session_state.ticket_chosen:
             border-radius: 5px;
             font-size: 0.8rem;
             white-space: pre-wrap;
-            line-height: 1.1;
+            line-height: 1em;
             text-align: left;     /* Ensures left alignment */
         }
 
@@ -270,8 +270,6 @@ if not st.session_state.ticket_chosen:
         }
     </style>
     """, unsafe_allow_html=True)
-
-
 
     st.markdown(f""" 
         <div class="custom-box">
@@ -283,13 +281,9 @@ if not st.session_state.ticket_chosen:
         </div>
     """, unsafe_allow_html=True)
 
-
-
-
     # Save state
     st.session_state.selected_ticket = selected_option
     st.session_state.query = body
-
 
 
     if st.button("▶️ Send to AI Agent"):
@@ -458,7 +452,7 @@ if st.session_state.agent_steps:
             # Only save responder output once (at current step)
             if i == st.session_state.step_index and not st.session_state.step_shown:
                 if agent_key == 'responder_agent':
-                    st.session_state.responder_agent_message = parsed_json.get('response', '')
+                    st.session_state.responder_agent_message = parsed_json.get('draft_response', '')
         except json.JSONDecodeError:
             st.error("Invalid JSON")
 
@@ -508,11 +502,11 @@ if st.session_state.agent_steps:
                     "box": """
                     🔗 The draft has been sent to the Technical Support Team.<br>You could view the draft: <a href="https://teams.microsoft.com/l/channel/19%3AXILR4XTVcvkQRU8ovnElUGo8jmQhXssT9aDd0Njqtpk1%40thread.tacv2/General?groupId=c81b03f5-93bb-41f9-bdbe-26e3600b9a42&tenantId=a77d40d9-dcba-4dda-b571-5f18e6da853f" target="_blank" style="color: #2b7cff;">here</a>"""
                 },
+
                 {
                     "title": "STEP 8: Support Team Gives Feedback",
                     "description": "The support team can approve, revise, or reject the draft response based on their assessment.",
-                    "box": """
-                    Waiting for approval... <br>Approval received ✔️"""
+                    "box": """{"""+f"""approved_by_technical_support : 'true', approval_date :{formatted_now}, approved_content_title : , approved_content""" + """}"""
                 },
                 {
                     "title": "STEP 9 : Send Approved Response to Customer",
@@ -536,15 +530,28 @@ if st.session_state.agent_steps:
                             <div style='font-weight: bold; font-size: 1.1rem; margin-bottom:0.75em'>{step["title"]}</div>
                             <div style='font-size: 1rem; color: #423F3F;'>{step["description"]}</div>
                         </div>
+                    
                     """, unsafe_allow_html=True)
 
-                    st.markdown(f"""
-                        <div class="gray-box">
-                            <div style="font-size: 0.9rem; color:#FFFFFF;">
-                                {step["box"]}
+                    if i != 1:
+                        st.markdown(f"""
+                            <div class="gray-box">
+                                <div style="font-size: 0.9rem; color:#FFFFFF;">
+                                    {step["box"]}
+                                </div>
                             </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        
+                        """, unsafe_allow_html=True)
+                    if  i== 1:
+
+                        parsed_json = {
+                            "approved_by_technical_support": True,
+                            "approval_date": formatted_now,
+                            "approved_content_title": st.session_state.selected_ticket,
+                            "approved_content": st.session_state.responder_agent_message
+                        }
+                        formatted_json = render_custom_json(parsed_json)
+                        st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
 
                     if i < current:
                         st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
@@ -553,7 +560,7 @@ if st.session_state.agent_steps:
                 st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
 
                 
-                if st.session_state.hardcoded_step_index == 2:
+                if i == 2:
                     st.markdown(f"""
                         <div style="
                             position: fixed;
@@ -581,8 +588,7 @@ if st.session_state.agent_steps:
                                     <b>Notes:</b> This notification is to update you that the approved response to customer ticket has been send to customer@company.com
                                 </div>
                             </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        </div> """, unsafe_allow_html=True)
 
 
                 if st.session_state.hardcoded_step_index == 0:
@@ -613,8 +619,7 @@ if st.session_state.agent_steps:
                                     <b>Notes:</b> Please review and respond to the AI-generated draft.
                                 </div>
                             </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        </div> """, unsafe_allow_html=True)
                 # Next button
                 if not st.session_state.hardcoded_step_index >= len(hardcoded_steps) - 1:
                     if st.button("➡️ Next", key=f"hardcoded_next_{current}") and current < len(hardcoded_steps) - 1:

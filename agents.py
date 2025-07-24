@@ -33,7 +33,7 @@ def build_team():
     ticket_classifier_agent = AssistantAgent(
         name="ticket_classifier",
         model_client=model_client,
-        system_message="Classify whether the ticket is relevant to Advantech technical support respond with  a json : {RELEVANT : TRUE} . The ticket is If not,respond with {RELEVANT : FALSE}",
+        system_message= "Respond with  a VALID json : {date: , from: customer@company.com, subject: ,  body: , issue :  ,relevant: 'true'}.",
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )
@@ -59,20 +59,21 @@ For each subquery:
    - troubleshooting : when the user asks for instructions to troubleshoot the issue they have
    - product information : when the user asks for detail about the attributes/features of a product
    - product discovery : when the user is trying to explore the available products, given a attribute/usecase of interest 
-   - other
-5. State the source to search on. If intent is spec_request, product information, or discovery it should be "Products Features JSON and Datasheet" 
+5. State the document_type. If intent is spec_request, product information, or discovery it should be "Products Features JSON and Datasheet" 
 If intent is instruction or troubleshooting, it should be "Product Manual" 
-5. Extract other related metadata if available. 
-Respond in json format and make sure include all keys. If there are multiple intents, use separate json. : 
+5. Extract other related metadata if available.
+6. Keywords should be the keywords which will facilitate filtering of the documents to be searched.  
+Respond in VALID json format and make sure include all keys.: 
 
-{**intent**:  , 
-**topic** : ,
-**search_source**: ,
+{**intent**: ,
+**issue_category** :, 
+**document_type**: ,
 **product_name**: ,
 **model_name**: , 
+**document_version**: , 
+**keywords**: 
 }
-
-... and so on.''',
+''',
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )
@@ -81,8 +82,15 @@ Respond in json format and make sure include all keys. If there are multiple int
         name="retriever_agent",
         model_client=model_client,
         system_message="""  
-        Given the user ticket and the relevant product, retrieve relevant documents from the internal knowledge base. Make sure to provide as much as detail as possible from the retrieved context. In the end provide the source inside square brackets [SOURCE:]  Do not add additional interpretation.Ignore non-informative chunks such as section descriptions.After retrieval respond with : 
-          - list down the relevant contexts in a clear, precise language, mention as much detail as possible while staying faithful to the documentation. 
+        Given the user ticket and the relevant product, retrieve relevant documents from the internal knowledge base. Make sure to provide as much as detail as possible from the retrieved context.  Do not add additional interpretation.Ignore non-informative chunks such as section descriptions.After retrieval respond with : 
+          - list down the relevant contexts in as a VALID list of json with the following keys : 
+
+          {"document_type" : ,  
+          "location" : "db.aeu.technical_support.documents, 
+          "content" : , 
+          "section" : , 
+          "page" : , 
+          "retrieval_score" : } 
             """,
         tools=[retrieve],
         reflect_on_tool_use=True,
@@ -92,7 +100,18 @@ Respond in json format and make sure include all keys. If there are multiple int
     responder_agent = AssistantAgent(
         name="responder_agent",
         model_client=model_client,
-        system_message="Write a professional support response to the user’s ticket using the ticket content and retrieved documents. Take only what is relevant from the retrieved documents, but do not summarize just give the information/instructions. If retrieved documents are none, ask for the specific model name, product type. End the response with Kind regards, Advantech Technical Support Team",
+        system_message="""
+ 
+        
+          In the end ONLY return a VALID json with : 
+          {"response_creation_timestamp": MM-DD-YYYY,  
+          "sender_email": customer@company.com, 
+          "issue_category ",
+          "response: Write a professional support response to the user’s ticket using the ticket content and retrieved documents.
+          Take only what is relevant from the retrieved documents, but do not summarize just give the information/instructions. Avoid suggesting consulting the manual or documentation as much as possible.
+          If retrieved documents are none, ask for the specific model name, product type. End the response with Kind regards, Advantech Technical Support Team. }
+          
+          """,
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )
@@ -101,7 +120,7 @@ Respond in json format and make sure include all keys. If there are multiple int
         name="evaluator_agent",
         model_client=model_client,
         system_message="Evaluate the support draft. Is it accurate, concise, and helpful? Does it miss any information from the retrieved context or add irrelevant/ fabricated information? "
-            "If yes, respond with 'APPROVE'.",
+            "In the end respond with a VALID json with following keys : {'ticket_body': ,'response' : , 'irrelevant_facts' : 0, 'semantic_score:' , 'status' : APPROVE }",
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )

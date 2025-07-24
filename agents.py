@@ -33,7 +33,7 @@ def build_team():
     ticket_classifier_agent = AssistantAgent(
         name="ticket_classifier",
         model_client=model_client,
-        system_message= "Respond with  a VALID json : {date: , from: customer@company.com, subject: ,  body: , issue :  ,relevant: 'true'}.",
+        system_message= "Respond with  a VALID json : {new_inquiry : 'true', product_group_involved: , responsible_support_team: 'AEU IIoT Support Team',  issue :, relevant: 'true',received_date: '23.07.2025 9:05' CET, from: customer@company.com, subject: ,  body:  }.",
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )
@@ -71,7 +71,9 @@ Respond in VALID json format and make sure include all keys.:
 **product_name**: ,
 **model_name**: , 
 **document_version**: , 
-**keywords**: 
+**keywords**: ,
+**ticket_subject: ,
+**ticket_body**: 
 }
 ''',
         reflect_on_tool_use=True,
@@ -85,12 +87,16 @@ Respond in VALID json format and make sure include all keys.:
         Given the user ticket and the relevant product, retrieve relevant documents from the internal knowledge base. Make sure to provide as much as detail as possible from the retrieved context.  Do not add additional interpretation.Ignore non-informative chunks such as section descriptions.After retrieval respond with : 
           - list down the relevant contexts in as a VALID list of json with the following keys : 
 
-          {"document_type" : ,  
-          "location" : "db.aeu.technical_support.documents, 
-          "content" : , 
+         [ {"document_type" : ,  
+          "location" : \\172.21.34.83\aits\Documents", 
+          "retrieval_score" : ,
           "section" : , 
           "page" : , 
-          "retrieval_score" : } 
+          "retrieved_context": , 
+          "ticket_subject" : ,
+          "ticket_content" : ,
+
+          } ]
             """,
         tools=[retrieve],
         reflect_on_tool_use=True,
@@ -104,13 +110,15 @@ Respond in VALID json format and make sure include all keys.:
  
         
           In the end ONLY return a VALID json with : 
-          {"response_creation_timestamp": MM-DD-YYYY,  
+          {"draft_creation_timestamp": 23-07-2025,  
           "sender_email": customer@company.com, 
-          "issue_category ",
-          "response: Write a professional support response to the user’s ticket using the ticket content and retrieved documents.
+          "issue_category:  ",
+          "draft_title" : ,
+          "draft_response: Write a professional support response to the user’s ticket using the ticket content and retrieved documents.
           Take only what is relevant from the retrieved documents, but do not summarize just give the information/instructions. Avoid suggesting consulting the manual or documentation as much as possible.
           If retrieved documents are none, ask for the specific model name, product type. End the response with Kind regards, Advantech Technical Support Team. }
-          
+          "ticket_subject" :, 
+          "ticket_content" :
           """,
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
@@ -120,7 +128,7 @@ Respond in VALID json format and make sure include all keys.:
         name="evaluator_agent",
         model_client=model_client,
         system_message="Evaluate the support draft. Is it accurate, concise, and helpful? Does it miss any information from the retrieved context or add irrelevant/ fabricated information? "
-            "In the end respond with a VALID json with following keys : {'ticket_body': ,'response' : , 'irrelevant_facts' : 0, 'semantic_score:' , 'status' : APPROVE }",
+            "In the end respond with a VALID json with following keys : {'irrelevant_facts' : 0, 'semantic_score:' , 'evaluation_status' : APPROVE,'draft_title' : ,'draft_response': ,}",
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )
@@ -134,6 +142,9 @@ Respond in VALID json format and make sure include all keys.:
 
     team = RoundRobinGroupChat([ticket_classifier_agent, ticket_analyzer_agent, retriever,responder_agent,evaluator_agent], termination_condition=external_termination|text_termination|text_termination1 | text_termination2 | text_termination3)
     return team
+# Run the agent and stream the messages to the console.
+# When running inside a script, use a async main function and call it from `asyncio.run(...)`.
+#asyncio.run(team.reset())# Reset the team for a new task.
 # Run the agent and stream the messages to the console.
 # When running inside a script, use a async main function and call it from `asyncio.run(...)`.
 #asyncio.run(team.reset())# Reset the team for a new task.

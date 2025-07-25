@@ -525,8 +525,6 @@ if st.session_state.agent_steps:
 
 
     # 4. Hardcoded last steps
-
-
     if st.session_state.step_index >= len(st.session_state.agent_steps):
 
         if st.session_state.get("ticket_relevant", True):
@@ -546,7 +544,7 @@ if st.session_state.agent_steps:
                 {
                     "title": "STEP 9 : Send Approved Response to Customer",
                     "description": "Once feedback is received, the AI Agent sends the final response to the customer through the ticketing system. The associated reminder is automatically cancelled.",
-                    "box": "The final response is sent to the customer via ticketing system ✔️ <br> You could preview the notification email sent to the Support Team after the response has been sent to the customer on the right ->"
+                    "box": "The final response is sent to the customer via ticketing system ✔️ <br> You could preview the notification email sent to the Support Team after the response has been sent to the customer below:"
                 },
                 {
                     "title": "STEP 10: Store Approved Response to Knowledge Base",
@@ -579,12 +577,17 @@ if st.session_state.agent_steps:
                         """, unsafe_allow_html=True)
 
                     if i == 1:  # STEP 8
-                        decision = st.radio("Support Team Decision:", ["Approved", "Requested Revision"])
-                        st.session_state.support_decision = decision
-                        if "support_decision" not in st.session_state:
-                            st.session_state.support_decision = "Approved"
 
-                        decision = st.session_state.support_decision
+                        # Use a unique key for the radio button to preserve selection
+                        decision = st.radio(
+                            "Support Team Decision:",
+                            ["Approved", "Revision", "Reject"],
+                            key="support_team_decision_radio"
+                        )
+
+                        # Store radio state in session (if not already)
+                        st.session_state.support_decision = decision
+
                         if decision == "Approved":
                             parsed_json = {
                                 "approved_by_technical_support": True,
@@ -592,101 +595,116 @@ if st.session_state.agent_steps:
                                 "approved_content_title": st.session_state.selected_ticket,
                                 "approved_content": st.session_state.responder_agent_message
                             }
-                        else:
-                            parsed_json = {
-                                "approved_by_technical_support": False,
-                                "approval_date": formatted_now,
-                                "revision_reason": "Please update the response to clarify BIOS compatibility and include the correct model link.",
-                                "requested_changes": "Clarify BIOS support and provide official documentation link."
-                            }
-
-                        formatted_json = render_custom_json(parsed_json)
-                        st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
-
-
-                    if i == 2:  # STEP 9
-                         if st.session_state.support_decision == "Approved":
-                                st.markdown(f"""
-                            <div class="gray-box">
-                                <div style="font-size: 0.9rem; color:#FFFFFF;">
-                                    {step["box"]}
-                                </div>
-                            </div>
-                        
-                        """, unsafe_allow_html=True)
-                                
-                                st.markdown(f"""
-                        <div style="
-                            position: fixed;
-                            bottom: 80px;
-                            right: 30px;
-                            width: 360px;
-                            background-color: #ffffff;
-                            color: #1a1a1a;
-                            border-radius: 10px;
-                            padding: 1em;
-                            display: flex;
-                            align-items: center;
-                            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
-                            font-family: 'Segoe UI', sans-serif;
-                            z-index: 1000;
-                        ">
-                            <img src="https://logospng.org/download/microsoft-outlook/logo-microsoft-outlook-1024.png"
-                                style="width: 40px; height: 40px; margin-right: 1em;" />
-                            <div>
-                                <div style="font-weight: bold; font-size: 1.05rem;">Outlook Notification</div>
-                                <div style="font-size: 0.9rem; margin-top: 0.4em;">
-                                    <b>From:</b> ai-agent-technical-support@advantech.com <br>
-                                    <b>Subject:</b>Approved Content Sent to the Customer<br>
-                                    <b>Date:</b> {formatted_now}<br>
-                                    <b>Notes:</b> This notification is to update you that the approved response to customer ticket has been send to customer@company.com
-                                </div>
-                            </div>
-                        </div> """, unsafe_allow_html=True)
-                            # existing Step 9
-                         else:
-                            st.markdown("""
-                                <div class="gray-box">
-                                    <b>⚠️ The support team has requested revisions.</b><br>
-                                    The draft will be revised and resent for review.
-                                </div>
-                            """, unsafe_allow_html=True)
-                            st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
-                            st.markdown(f"""
-                        <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
-                            <div style='font-weight: bold; font-size: 1.1rem; margin-bottom:0.75em'>Backtrack Step : Revise Response Draft  </div>
-                            <div style='font-size: 1rem; color: #423F3F;'>Since the drafted response has been rejected Agentic Flow goes back to step 4 and 5 to draft a new response based on the feedback from the support Team.</div>
-                        </div>
-                    
-                    """, unsafe_allow_html=True)
-                            parsed_json = {
-                                "revised_response_title": st.session_state.selected_ticket,
-                                "revision_date": formatted_now,
-                                "revision_reason": "Please update the response to clarify BIOS compatibility and include the correct model link.",
-                                "requested_changes": "Clarify BIOS support and provide official documentation link.",
-                                "revised_response_draft": ask_ai_answer(st.session_state.responder_agent_message)
-                            }
-
+                            st.session_state.revision_reason_input = st.session_state.responder_agent_message
                             formatted_json = render_custom_json(parsed_json)
                             st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
 
-                    if  i== 3:
-                        
-                        parsed_json = {
-                            "approved_by_technical_support": True,
-                            "approval_date": formatted_now,
-                            "saved_content_title": st.session_state.selected_ticket,
-                            "knowledge_base" : "db.aeu.ai_technical_support.knowledge_base",
-                            "saved_content": st.session_state.responder_agent_message 
-                        }
-                        formatted_json = render_custom_json(parsed_json)
-                        st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
+                        elif decision == "Revision":
+                            # Use a key to retain text input across reruns
+                            revision_reason = st.text_area(
+                                "Support Team Feedback for Revision",
+                                placeholder="Please provide revision notes here...",
+                                key="revision_text_input"
+                            )
+                            # Do NOT assign to session yet, do it on "Next"
 
-                    if i < current:
-                        st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
+                        elif decision == "Reject":
+                            st.session_state.rejected = True
+                            st.markdown("""
+                                <div class="gray-box">
+                                    <b>🛑 The support team has rejected the draft.</b><br>
+                                    This process has been terminated and will not proceed further.
+                                </div>
+                            """, unsafe_allow_html=True)
 
-                # Arrow for current step (optional)
-                st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
+                            if st.button("🔁 Reset"):
+                                st.session_state.hardcoded_step_index = 0
+                                st.session_state.ticket_chosen = False
+                                st.session_state.step_index = 0
+                                st.session_state.query = None
+                                st.session_state.flow_completed = False
+                                st.session_state.selected_ticke = None
+                                st.session_state.hardcoded_step_index = 0
+                                
+                                st.session_state.agent_steps = []
+                                st.session_state.step_index = 0
+                                st.session_state.flow_completed = False
+                                st.session_state.step_shown = False
+                                st.session_state.rejected = False
+                                sent = False
+                                st.rerun()
+                            
+                    if not st.session_state.get("rejected", False):
+                        if i == 2:  # STEP 9
+                            
+                                 st.markdown(f"""
+                                 <div class="gray-box">
+                                     <div style="font-size: 0.9rem; color:#FFFFFF;">
+                                         {step["box"]}
+                                     </div>
+                                 </div>
+                            
+                             """, unsafe_allow_html=True)
+                                    
+                            #     st.markdown(f"""
+                            # <div style="
+                            #     position: fixed;
+                            #     bottom: 80px;
+                            #     right: 30px;
+                            #     width: 360px;
+                            #     background-color: #ffffff;
+                            #     color: #1a1a1a;
+                            #     border-radius: 10px;
+                            #     padding: 1em;
+                            #     display: flex;
+                            #     align-items: center;
+                            #     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+                            #     font-family: 'Segoe UI', sans-serif;
+                            #     z-index: 1000;
+                            # ">
+                            #     <img src="https://logospng.org/download/microsoft-outlook/logo-microsoft-outlook-1024.png"
+                            #         style="width: 40px; height: 40px; margin-right: 1em;" />
+                            #     <div>
+                            #         <div style="font-weight: bold; font-size: 1.05rem;">Outlook Notification</div>
+                            #         <div style="font-size: 0.9rem; margin-top: 0.4em;">
+                            #             <b>From:</b> ai-agent-technical-support@advantech.com <br>
+                            #             <b>Subject:</b>Approved Content Sent to the Customer<br>
+                            #             <b>Date:</b> {formatted_now}<br>
+                            #             <b>Notes:</b> This notification is to update you that the approved response to customer ticket has been send to customer@company.com
+                            #         </div>
+                            #     </div>
+                            # </div> """, unsafe_allow_html=True)
+
+                                 st.session_state.responder_agent_message = st.session_state.revision_reason_input 
+                                 parsed_json = {
+                                "to": "customer@company.com",
+                                "sent_date": formatted_now,
+                                "email_title": st.session_state.selected_ticket,
+                                "email_body": st.session_state.responder_agent_message
+                            }
+
+                                 formatted_json = render_custom_json(parsed_json)
+                                 st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
+                                # existing Step 9
+
+                        if  i== 3:
+                            
+                            parsed_json = {
+                                "approved_by_technical_support": True,
+                                "approval_date": formatted_now,
+                                "saved_content_title": st.session_state.selected_ticket,
+                                "knowledge_base" : "db.aeu.ai_technical_support.knowledge_base",
+                                "saved_content": st.session_state.responder_agent_message 
+                            }
+                            formatted_json = render_custom_json(parsed_json)
+                            st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
+
+                        if i < current:
+                            st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
+
+                    # Arrow for current step (optional)
+                   # if not st.session_state.get("rejected", False):
+                   #     st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
 
                 
 
@@ -721,9 +739,10 @@ if st.session_state.agent_steps:
                         </div> """, unsafe_allow_html=True)
                 # Next button
                 if not st.session_state.hardcoded_step_index >= len(hardcoded_steps) - 1:
-                    if st.button("➡️ Next", key=f"hardcoded_next_{current}") and current < len(hardcoded_steps) - 1:
-                        st.session_state.hardcoded_step_index += 1
-                        st.rerun()
+                    if not st.session_state.get("rejected", False):
+                        if st.button("➡️ Next", key=f"hardcoded_next_{current}") and current < len(hardcoded_steps) - 1:
+                            st.session_state.hardcoded_step_index += 1
+                            st.rerun()
 
             if st.session_state.hardcoded_step_index >= len(hardcoded_steps) - 1:
                 col1, col2 = st.columns([1, 1])

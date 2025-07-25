@@ -13,9 +13,13 @@ import pygments
 from pygments.lexers import JsonLexer
 from pygments.formatters import HtmlFormatter
 from datetime import datetime, timedelta
+from openai import OpenAI
+import os 
 
 now = datetime.now()
 formatted_now = now.strftime("%A, %B %d at %I:%M %p")
+API_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=API_KEY)
 def render_custom_json(data):
     def format_value(value):
         if isinstance(value, str):
@@ -163,7 +167,19 @@ def run_async(coro):
         return loop.run_until_complete(coro)
     
 
+def ask_ai_answer(question: str):
+    user_input = question
+    response = client.chat.completions.create(
+        messages=[
+            {'role': 'system', 'content': f'please rephrase the provided response and only output the revised response and nothing else. '},
+            {'role': 'user', 'content': question},
+        ],
+        model='gpt-4.1-nano',
+        temperature=0,
+    )
 
+    answer = response.choices[0].message.content
+    return answer
 
 # ---------- Main agentic flow ----------
 async def run_agent_flow(query: str):
@@ -509,6 +525,8 @@ if st.session_state.agent_steps:
 
 
     # 4. Hardcoded last steps
+
+
     if st.session_state.step_index >= len(st.session_state.agent_steps):
 
         if st.session_state.get("ticket_relevant", True):
@@ -532,7 +550,7 @@ if st.session_state.agent_steps:
                 },
                 {
                     "title": "STEP 10: Store Approved Response to Knowledge Base",
-                    "description": "Finally, the AI Agent stores the approved response as part of its learning loop. This historical data is then used by the Evaluator Agent to enhance future draft evaluations",
+                    "description": "Finally, the AI Agent stores the approved (revised) response as part of its learning loop. This historical data is then used by the Evaluator Agent to enhance future draft evaluations",
                     "box": "The final response is stored in the database for future reference 🗃️"
                 }
             ]
@@ -550,7 +568,7 @@ if st.session_state.agent_steps:
                     
                     """, unsafe_allow_html=True)
 
-                    if i != 1 and i !=3 :
+                    if i ==0 :
                         st.markdown(f"""
                             <div class="gray-box">
                                 <div style="font-size: 0.9rem; color:#FFFFFF;">
@@ -559,38 +577,45 @@ if st.session_state.agent_steps:
                             </div>
                         
                         """, unsafe_allow_html=True)
-                    if  i== 1:
 
-                        parsed_json = {
-                            "approved_by_technical_support": True,
-                            "approval_date": formatted_now,
-                            "approved_content_title": st.session_state.selected_ticket,
-                            "approved_content": st.session_state.responder_agent_message
-                        }
+                    if i == 1:  # STEP 8
+                        decision = st.radio("Support Team Decision:", ["Approved", "Requested Revision"])
+                        st.session_state.support_decision = decision
+                        if "support_decision" not in st.session_state:
+                            st.session_state.support_decision = "Approved"
+
+                        decision = st.session_state.support_decision
+                        if decision == "Approved":
+                            parsed_json = {
+                                "approved_by_technical_support": True,
+                                "approval_date": formatted_now,
+                                "approved_content_title": st.session_state.selected_ticket,
+                                "approved_content": st.session_state.responder_agent_message
+                            }
+                        else:
+                            parsed_json = {
+                                "approved_by_technical_support": False,
+                                "approval_date": formatted_now,
+                                "revision_reason": "Please update the response to clarify BIOS compatibility and include the correct model link.",
+                                "requested_changes": "Clarify BIOS support and provide official documentation link."
+                            }
+
                         formatted_json = render_custom_json(parsed_json)
                         st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
 
-                    if  i== 3:
 
-                        parsed_json = {
-                            "approved_by_technical_support": True,
-                            "approval_date": formatted_now,
-                            "saved_content_title": st.session_state.selected_ticket,
-                            "knowledge_base" : "db.aeu.ai_technical_support.knowledge_base",
-                            "saved_content": st.session_state.responder_agent_message 
-                        }
-                        formatted_json = render_custom_json(parsed_json)
-                        st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
-
-                    if i < current:
-                        st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
-
-                # Arrow for current step (optional)
-                st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
-
-                
-                if i == 2:
-                    st.markdown(f"""
+                    if i == 2:  # STEP 9
+                         if st.session_state.support_decision == "Approved":
+                                st.markdown(f"""
+                            <div class="gray-box">
+                                <div style="font-size: 0.9rem; color:#FFFFFF;">
+                                    {step["box"]}
+                                </div>
+                            </div>
+                        
+                        """, unsafe_allow_html=True)
+                                
+                                st.markdown(f"""
                         <div style="
                             position: fixed;
                             bottom: 80px;
@@ -618,7 +643,52 @@ if st.session_state.agent_steps:
                                 </div>
                             </div>
                         </div> """, unsafe_allow_html=True)
+                            # existing Step 9
+                         else:
+                            st.markdown("""
+                                <div class="gray-box">
+                                    <b>⚠️ The support team has requested revisions.</b><br>
+                                    The draft will be revised and resent for review.
+                                </div>
+                            """, unsafe_allow_html=True)
+                            st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
+                            st.markdown(f"""
+                        <div style='border-left: 4px solid #2b7cff; padding-left: 1em; margin: 1em 0;'>
+                            <div style='font-weight: bold; font-size: 1.1rem; margin-bottom:0.75em'>Backtrack Step : Revise Response Draft  </div>
+                            <div style='font-size: 1rem; color: #423F3F;'>Since the drafted response has been rejected Agentic Flow goes back to step 4 and 5 to draft a new response based on the feedback from the support Team.</div>
+                        </div>
+                    
+                    """, unsafe_allow_html=True)
+                            parsed_json = {
+                                "revised_response_title": st.session_state.selected_ticket,
+                                "revision_date": formatted_now,
+                                "revision_reason": "Please update the response to clarify BIOS compatibility and include the correct model link.",
+                                "requested_changes": "Clarify BIOS support and provide official documentation link.",
+                                "revised_response_draft": ask_ai_answer(st.session_state.responder_agent_message)
+                            }
 
+                            formatted_json = render_custom_json(parsed_json)
+                            st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
+
+                    if  i== 3:
+                        
+                        parsed_json = {
+                            "approved_by_technical_support": True,
+                            "approval_date": formatted_now,
+                            "saved_content_title": st.session_state.selected_ticket,
+                            "knowledge_base" : "db.aeu.ai_technical_support.knowledge_base",
+                            "saved_content": st.session_state.responder_agent_message 
+                        }
+                        formatted_json = render_custom_json(parsed_json)
+                        st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
+
+                    if i < current:
+                        st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
+
+                # Arrow for current step (optional)
+                st.markdown("<div class='arrow'>⬇️</div>", unsafe_allow_html=True)
+
+                
 
                 if st.session_state.hardcoded_step_index == 0:
                     st.markdown(f"""

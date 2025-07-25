@@ -87,7 +87,7 @@ Respond in VALID json format and make sure include all keys.:
         Given the user ticket and the relevant product, retrieve relevant documents from the internal knowledge base. Make sure to provide as much as detail as possible from the retrieved context.  Do not add additional interpretation.Ignore non-informative chunks such as section descriptions.After retrieval respond with : 
           - list down the relevant contexts in as a VALID list of json with the following keys : 
 
-         [ {"document_type" : ,  
+          {"document_type" : ,  
           "location" : \\172.21.34.83\aits\Documents", 
           "retrieval_score" : ,
           "section" : , 
@@ -95,8 +95,7 @@ Respond in VALID json format and make sure include all keys.:
           "retrieved_context": , 
           "ticket_subject" : ,
           "ticket_content" : ,
-
-          } ]
+          } 
             """,
         tools=[retrieve],
         reflect_on_tool_use=True,

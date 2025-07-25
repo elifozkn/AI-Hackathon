@@ -203,7 +203,8 @@ Kind regards,"""
 "email": "customer@company.com",
 "timestamp": "2025-07-18 10:43 AM",
     "body": """
-Hi Support,
+    
+    Hi Support,
 
 I'm looking into the AIMB-217 board. I'm working on system-level performance tracing and I have a few questions about using blktrace and perf. For blktrace, could you explain how to properly configure buffer size and count u, and how to limit event types? I'm also curious about how to stream live output using blkparse, and whether there's a recommended way to set a trace duration with -w. As for perf, I'm particularly interested in tracing dynamic system events. could you elaborate on how to collect things like stack traces or profiling specific tasks? Any best practices for combining these tools efficiently would be really helpful!
 Thanks,"""
@@ -220,6 +221,22 @@ Dear Advantech,
 Hi, I'm evaluating the ADAM-3600-C2GL1A1E for an industrial IoT project and wanted to confirm some of its capabilities. Could you please provide detailed information on its power requirements? I'm also interested in the CPU specs, memory configuration, supported protocols, OS compatibility, and available expansion slots. Does it also include a VGA video port, and what certifications does it carry? Thanks!
 Regards,"""
     },
+
+        "Ticket 4 - Product Information Request": {
+"sender": "Emily Zhao",
+"email": "customer@company.com",
+"timestamp": "2025-07-17 04:17 PM",
+"body": """
+
+Dear Advantech,
+
+I am currently evaluating data acquisition devices for an upcoming project, and our use case requires operation in environments with a very high temperature range.
+Could you please recommend any specific products from your portfolio that are suited for such conditions?
+Thank you in advance for your support.
+
+Best regards,
+"""
+    }
 
 }
 

@@ -198,7 +198,7 @@ I have recently purchased ARK-11. I cannot find any information about re-setting
 Kind regards,"""
     },
 
-"Ticket 2 - AIMB-217 Technical Information Inquiry": {
+"Ticket 2 - Motherboard Technical Information Inquiry": {
 "sender": "Emily Zhao",
 "email": "customer@company.com",
 "timestamp": "2025-07-18 10:43 AM",
@@ -209,7 +209,7 @@ I'm looking into the AIMB-217 board. I'm working on system-level performance tra
 Thanks,"""
     },
 
-    "Ticket 3 - ADAM-3600 ": {
+    "Ticket 3 - Technical Information Request": {
 "sender": "Emily Zhao",
 "email": "customer@company.com",
 "timestamp": "2025-07-17 04:17 PM",
@@ -236,8 +236,8 @@ if not st.session_state.ticket_chosen:
         <div margin: 1em 0;'>
             <div style='font-weight: bold; font-size: 1.5em; margin-top:1.2em;margin-bottom:0.75em'>Ticketing System Emulator</div>
             <div style='font-size: 1rem; color: #423F3F;'>To demonstrate how Agentic AI works in real practice, we’ve prepared several sample support emails from actual customer scenarios.
-           <br> In this demo, you’ll walk through the entire process step by step—from receiving the email, to Agentic RAG retrieval, and finally sending the response.
-            <br>For simplicity, certain integrations that require complex configurations or restricted access have been virtually simulated, with some outputs pre-set for demonstration purposes.
+        In this demo, you’ll walk through the entire process step by step—from receiving the email, to Agentic RAG retrieval, and finally sending the response.
+    For simplicity, certain integrations that require complex configurations or restricted access have been virtually simulated, with some outputs pre-set for demonstration purposes.
            <br><br> Please select one of the tickets below and click “Send to AI Agent” to begin the workflow.
     """, unsafe_allow_html=True)
 
@@ -500,7 +500,7 @@ if st.session_state.agent_steps:
                     "title": "STEP 7 : Send Draft to Support Team & Register Reminder",
                     "description": "The AI Agent sends the draft response to the support team via Microsoft Teams for review and final approval. Simultaneously, it creates a reminder in Microsoft Outlook to ensure timely follow-up by the support team.",
                     "box": """
-                    🔗 The draft has been sent to the Technical Support Team.<br>You could view the draft: <a href="https://teams.microsoft.com/l/channel/19%3AXILR4XTVcvkQRU8ovnElUGo8jmQhXssT9aDd0Njqtpk1%40thread.tacv2/General?groupId=c81b03f5-93bb-41f9-bdbe-26e3600b9a42&tenantId=a77d40d9-dcba-4dda-b571-5f18e6da853f" target="_blank" style="color: #2b7cff;">here</a>"""
+                    🔗 The draft has been sent to the Technical Support Team.<br>A preview of the reminder notification is displayed on the right -> <br>You could view the draft: <a href="https://teams.microsoft.com/l/channel/19%3AXILR4XTVcvkQRU8ovnElUGo8jmQhXssT9aDd0Njqtpk1%40thread.tacv2/General?groupId=c81b03f5-93bb-41f9-bdbe-26e3600b9a42&tenantId=a77d40d9-dcba-4dda-b571-5f18e6da853f" target="_blank" style="color: #2b7cff;">here</a>"""
                 },
 
                 {
@@ -511,7 +511,7 @@ if st.session_state.agent_steps:
                 {
                     "title": "STEP 9 : Send Approved Response to Customer",
                     "description": "Once feedback is received, the AI Agent sends the final response to the customer through the ticketing system. The associated reminder is automatically cancelled.",
-                    "box": "The final response is sent to the customer via ticketing system ✔️"
+                    "box": "The final response is sent to the customer via ticketing system ✔️ <br> You could preview the notification email sent to the Support Team after the response has been sent to the customer on the right ->"
                 },
                 {
                     "title": "STEP 10: Store Approved Response to Knowledge Base",
@@ -533,7 +533,7 @@ if st.session_state.agent_steps:
                     
                     """, unsafe_allow_html=True)
 
-                    if i != 1:
+                    if i != 1 and i !=3 :
                         st.markdown(f"""
                             <div class="gray-box">
                                 <div style="font-size: 0.9rem; color:#FFFFFF;">
@@ -549,6 +549,18 @@ if st.session_state.agent_steps:
                             "approval_date": formatted_now,
                             "approved_content_title": st.session_state.selected_ticket,
                             "approved_content": st.session_state.responder_agent_message
+                        }
+                        formatted_json = render_custom_json(parsed_json)
+                        st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
+
+                    if  i== 3:
+
+                        parsed_json = {
+                            "approved_by_technical_support": True,
+                            "approval_date": formatted_now,
+                            "saved_content_title": st.session_state.selected_ticket,
+                            "knowledge_base" : "db.aeu.ai_technical_support.knowledge_base",
+                            "saved_content": st.session_state.responder_agent_message 
                         }
                         formatted_json = render_custom_json(parsed_json)
                         st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)

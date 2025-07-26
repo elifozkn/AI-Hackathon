@@ -33,7 +33,7 @@ def build_team():
     ticket_classifier_agent = AssistantAgent(
         name="ticket_classifier",
         model_client=model_client,
-        system_message= "Respond with  a VALID json : {new_inquiry : 'true', product_group_involved: , responsible_support_team: 'AEU IIoT Support Team',  issue :, relevant: 'true',received_date: '23.07.2025 9:05' CET, from: customer@company.com, subject: ,  body:  }.",
+        system_message= "Respond with  a VALID json : {new_inquiry : 'true', product_group_involved: , responsible_support_team: 'AEU IIoT Support Team',  issue :, relevant: 'true',received_date: '23.07.2025 9:05' CET, requestor: customer@company.com, email_subject: ,  email_body:  }.",
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )
@@ -72,8 +72,8 @@ Respond in VALID json format and make sure include all keys.:
 **model_name**: , 
 **document_version**: , 
 **keywords**: ,
-**ticket_subject: ,
-**ticket_body**: 
+**email_subject: ,
+**email_body**: 
 }
 ''',
         reflect_on_tool_use=True,
@@ -85,16 +85,16 @@ Respond in VALID json format and make sure include all keys.:
         model_client=model_client,
         system_message="""  
         Given the user ticket and the relevant product, retrieve relevant documents from the internal knowledge base. Make sure to provide as much as detail as possible from the retrieved context.  Do not add additional interpretation.Ignore non-informative chunks such as section descriptions.After retrieval respond with : 
-          - list down the relevant contexts in as a VALID list of json with the following keys : 
+          - return a VALID list of json with the following keys : 
 
-          {"document_type" : ,  
-          "location" : \\172.21.34.83\aits\Documents", 
+          { "document_type" : ,  
+          "location" : \\172.21.34.83\aits\Documents\{document_type}\{product_name}}", 
           "retrieval_score" : ,
           "section" : , 
           "page" : , 
           "retrieved_context": , 
-          "ticket_subject" : ,
-          "ticket_content" : ,
+          "email_subject" : ,
+          "email_body" : ,
           } 
             """,
         tools=[retrieve],
@@ -110,14 +110,14 @@ Respond in VALID json format and make sure include all keys.:
         
           In the end ONLY return a VALID json with : 
           {"draft_creation_timestamp": 23-07-2025,  
-          "sender_email": customer@company.com, 
+          "requestor": customer@company.com, 
           "issue_category:  ",
-          "draft_title" : ,
-          "draft_response: Write a professional support response to the user’s ticket using the ticket content and retrieved documents.
+          "draft_subject" : ,
+          "draft_body: Write a professional support response to the user’s ticket using the ticket content and retrieved documents.
           Take only what is relevant from the retrieved documents, but do not summarize just give the information/instructions. Avoid suggesting consulting the manual or documentation as much as possible.
           If retrieved documents are none, ask for the specific model name, product type. End the response with Kind regards, Advantech Technical Support Team. }
-          "ticket_subject" :, 
-          "ticket_content" :
+          "email_subject" :, 
+          "email_body" :
           """,
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
@@ -127,13 +127,13 @@ Respond in VALID json format and make sure include all keys.:
         name="evaluator_agent",
         model_client=model_client,
         system_message="Evaluate the support draft. Is it accurate, concise, and helpful? Does it miss any information from the retrieved context or add irrelevant/ fabricated information? "
-            "In the end respond with a VALID json with following keys : {'irrelevant_facts' : 0, 'semantic_score:' , 'evaluation_status' : APPROVE,'draft_title' : ,'draft_response': ,}",
+            "In the end respond with a VALID json with following keys : {'irrelevant_facts' : 0, 'semantic_score:' , 'evaluation_status' : PASSED,'draft_subject' : ,'draft_body': ,}",
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )
 
 
-    text_termination = TextMentionTermination("APPROVE")
+    text_termination = TextMentionTermination("PASSED")
     text_termination1 = TextMentionTermination("NOT RELEVANT")
     text_termination2 = TextMentionTermination('false')
     text_termination3 = TextMentionTermination('FALSE')

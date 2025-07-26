@@ -87,15 +87,42 @@ Respond in VALID json format and make sure include all keys.:
         Given the user ticket and the relevant product, retrieve relevant documents from the internal knowledge base. Make sure to provide as much as detail as possible from the retrieved context.  Do not add additional interpretation.Ignore non-informative chunks such as section descriptions.After retrieval respond with : 
           - return a VALID list of json with the following keys : 
 
-          { "document_type" : ,  
-          "location" : \\172.21.34.83\aits\Documents\{document_type}\{product_name}}", 
-          "retrieval_score" : ,
-          "section" : , 
-          "page" : , 
-          "retrieved_context": , 
-          "email_subject" : ,
-          "email_body" : ,
-          } 
+    
+    {
+            email_subject="",
+
+            email_body="",
+
+            contexts=[
+
+                {
+
+                "document_type":"",
+
+                "location":"\\172.21.34.83\\aits\Documents\<document_type>\<product_name>",
+
+                "retrieval_score":"",
+
+                "retrieved_content":""
+
+                },
+
+                {
+
+                "document_type":"",
+
+                "location":""\\172.21.34.83\\aits\Documents\<document_type>\<product_name>"",
+
+                "retrieval_score":"",
+
+                "retrieved_content":""
+
+                },
+
+            ]
+
+            }
+ 
             """,
         tools=[retrieve],
         reflect_on_tool_use=True,

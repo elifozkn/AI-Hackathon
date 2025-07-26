@@ -535,7 +535,7 @@ if st.session_state.agent_steps:
                     "title": "STEP 7 : Send Draft to Support Team & Register Reminder",
                     "description": "The AI Agent sends the draft response to the support team via Microsoft Teams for review and final approval. Simultaneously, it creates a reminder in Microsoft Outlook to ensure timely follow-up by the support team.",
                     "box": """
-                    🔗 The draft has been sent to the Technical Support Team. <br> You could view the draft: <a href="https://teams.microsoft.com/l/channel/19%3A09Htb423UH4I2QBXUmhkawf5Tg56h_lqLyECJz1Z0Qc1%40thread.tacv2/AI%20Agent%20Drafts?groupId=414991d8-2955-480a-bc3c-48e1c5373070&tenantId=a77d40d9-dcba-4dda-b571-5f18e6da853f" target="_blank" style="color: #2b7cff;">here</a> <br><br>A preview of the reminder notification is displayed on the right -> <br>"""
+                    🔗 The draft has been sent to the Technical Support Team. <br> You could view the draft: <a href="https://teams.microsoft.com/l/channel/19%3ADFFLlyul7wHuVeqMTVDXhRB1SxD5sbnLvKkF7QvtPq41%40thread.tacv2/General?groupId=1f591acc-1880-485c-919f-050426dcfde0&tenantId=a77d40d9-dcba-4dda-b571-5f18e6da853f" target="_blank" style="color: #2b7cff;">here</a> <br><br>A preview of the reminder notification is displayed on the right -> <br>"""
                 },
 
                 {
@@ -583,7 +583,7 @@ if st.session_state.agent_steps:
 
 
                           
-                        webhook_url = "https://advantecho365.webhook.office.com/webhookb2/414991d8-2955-480a-bc3c-48e1c5373070@a77d40d9-dcba-4dda-b571-5f18e6da853f/IncomingWebhook/df48a82524264af7af8bf8b4b1360115/f4cdb5a2-8613-44fe-81c7-5e3ee2c909b8/V2FuPl315fH8OZdzYz5QsXzjLFMQzgHrLVNgqaRik5KeE1"
+                        webhook_url = "https://advantecho365.webhook.office.com/webhookb2/1f591acc-1880-485c-919f-050426dcfde0@a77d40d9-dcba-4dda-b571-5f18e6da853f/IncomingWebhook/4c6cda81a4bb415cbba23be27458b711/f4cdb5a2-8613-44fe-81c7-5e3ee2c909b8/V2bzN7U-JxU9ave6cHkP4Jav6tDTvQztKR1do88Xmi0dY1"
                         payload = {
                             "text": f" Date : {st.session_state.get('query')['timestamp']} \n Sender : {st.session_state.get('query')['email']}\n\n\n\n--------------------------\n\n User Inquiry 📧: \n {st.session_state.get('query')['body']}\n\n\n--------------------------\n\n🧠 Responder Agent Output:\n\n{st.session_state.get('responder_agent_message', 'No responder message found')}"
                         }
@@ -808,7 +808,6 @@ if st.session_state.agent_steps:
                         )
             
         st.session_state.flow_completed = True
-
 
 
 

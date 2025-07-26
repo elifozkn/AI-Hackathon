@@ -556,6 +556,8 @@ if st.session_state.agent_steps:
             ]
 
             current = st.session_state.hardcoded_step_index
+
+
             if current < len(hardcoded_steps):
                 for i in range(current + 1):  # <-- Show all steps up to current
                     step = hardcoded_steps[i]
@@ -651,12 +653,9 @@ if st.session_state.agent_steps:
                                         You can still change your decision before continuing.
                                     </div>
                                 """, unsafe_allow_html=True)
+                                st.markdown("<div style='margin-top: 2em;'></div>", unsafe_allow_html=True)
+                                
 
-
-
-
-
-                            
                     if i == 2:  # STEP 9
                             decision = st.session_state.get("support_team_decision_radio", None)
                             if decision == 'Approve':
@@ -736,16 +735,30 @@ if st.session_state.agent_steps:
                         st.session_state.support_decision_made = True
                         decision = st.session_state.get("support_team_decision_radio", None)
 
-                        if decision == "Revise":
+                        if decision == 'Approve':
+                                st.session_state.rejected = False
+                                st.session_state.hardcoded_step_index += 1
+                                st.rerun()
+
+                        elif decision == "Revise":
                             st.session_state.rejected = False
                             st.session_state.revision_reason_input = st.session_state.get("revision_text_input", "")
+                            st.session_state.hardcoded_step_index += 1
+                            st.rerun()
 
                         elif decision == "Reject":
                             st.session_state.rejected = True
-                            st.warning("🔄 Please refresh your browser manually to select another ticket")
-                        if decision != "Reject":
-                            st.session_state.hardcoded_step_index += 1
+                            st.session_state.support_decision_made = True
+                            st.session_state.show_refresh_warning = True
                             st.rerun()
+                            if st.session_state.get("show_refresh_warning", False):
+                                st.warning("🔄 Please refresh your browser manually to select another ticket")
+                                st.session_state.show_refresh_warning = False  # clear after showing
+
+                                st.stop()
+                    if st.session_state.get("show_refresh_warning", False):
+                        st.warning("🔄 Please refresh your browser manually to select another ticket")
+                        st.session_state.show_refresh_warning = False
                 else:
                     st.warning("Please select an action before continuing.")
 
@@ -795,6 +808,7 @@ if st.session_state.agent_steps:
                         )
             
         st.session_state.flow_completed = True
+
 
 
 

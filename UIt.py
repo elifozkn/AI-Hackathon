@@ -518,18 +518,6 @@ if st.session_state.agent_steps:
         st.session_state.ticket_relevant = True
     sent = False
 
-    if last_step[1] == "evaluator_agent" and 'PASSED' in last_step[2].upper() and st.session_state.step_index>=6 and not sent:
-        webhook_url = "https://advantecho365.webhook.office.com/webhookb2/c81b03f5-93bb-41f9-bdbe-26e3600b9a42@a77d40d9-dcba-4dda-b571-5f18e6da853f/IncomingWebhook/2dcafd747c2243f695b4279157d8dc41/f4cdb5a2-8613-44fe-81c7-5e3ee2c909b8/V2ZFfDvGZVE4pdmzX5xI00IdIpFgT6LEo2r_-L3d0q8XE1"
-        payload = {
-            "text": f" Date : {st.session_state.get('query')['timestamp']} \n Sender : {st.session_state.get('query')['email']}\n\n\n\n--------------------------\n\n User Inquiry 📧: \n {st.session_state.get('query')['body']}\n\n\n--------------------------\n\n🧠 Responder Agent Output:\n\n{st.session_state.get('responder_agent_message', 'No responder message found')}"
-        }
-        try:
-            response = requests.post(webhook_url, json=payload)
-            print("Teams response:", response.status_code, response.text)
-            sent = True
-        except Exception as e:
-            print("Failed to send message to Teams:", e)
-
     # 3. Step-by-step flow controller
     if not st.session_state.get("flow_completed", False) and st.session_state.step_index < len(st.session_state.agent_steps):
         if st.button("➡️ Next"):
@@ -547,7 +535,7 @@ if st.session_state.agent_steps:
                     "title": "STEP 7 : Send Draft to Support Team & Register Reminder",
                     "description": "The AI Agent sends the draft response to the support team via Microsoft Teams for review and final approval. Simultaneously, it creates a reminder in Microsoft Outlook to ensure timely follow-up by the support team.",
                     "box": """
-                    🔗 The draft has been sent to the Technical Support Team. <br> You could view the draft: <a href="https://teams.microsoft.com/l/channel/19%3AXILR4XTVcvkQRU8ovnElUGo8jmQhXssT9aDd0Njqtpk1%40thread.tacv2/General?groupId=c81b03f5-93bb-41f9-bdbe-26e3600b9a42&tenantId=a77d40d9-dcba-4dda-b571-5f18e6da853f" target="_blank" style="color: #2b7cff;">here</a> <br><br>A preview of the reminder notification is displayed on the right -> <br>"""
+                    🔗 The draft has been sent to the Technical Support Team. <br> You could view the draft: <a href="https://teams.microsoft.com/l/channel/19%3A09Htb423UH4I2QBXUmhkawf5Tg56h_lqLyECJz1Z0Qc1%40thread.tacv2/AI%20Agent%20Drafts?groupId=414991d8-2955-480a-bc3c-48e1c5373070&tenantId=a77d40d9-dcba-4dda-b571-5f18e6da853f" target="_blank" style="color: #2b7cff;">here</a> <br><br>A preview of the reminder notification is displayed on the right -> <br>"""
                 },
 
                 {
@@ -591,71 +579,80 @@ if st.session_state.agent_steps:
                         
                         """, unsafe_allow_html=True)
 
+
+                          
+                        webhook_url = "https://advantecho365.webhook.office.com/webhookb2/414991d8-2955-480a-bc3c-48e1c5373070@a77d40d9-dcba-4dda-b571-5f18e6da853f/IncomingWebhook/df48a82524264af7af8bf8b4b1360115/f4cdb5a2-8613-44fe-81c7-5e3ee2c909b8/V2FuPl315fH8OZdzYz5QsXzjLFMQzgHrLVNgqaRik5KeE1"
+                        payload = {
+                            "text": f" Date : {st.session_state.get('query')['timestamp']} \n Sender : {st.session_state.get('query')['email']}\n\n\n\n--------------------------\n\n User Inquiry 📧: \n {st.session_state.get('query')['body']}\n\n\n--------------------------\n\n🧠 Responder Agent Output:\n\n{st.session_state.get('responder_agent_message', 'No responder message found')}"
+                        }
+                        try:
+                            response = requests.post(webhook_url, json=payload)
+                            print("Teams response:", response.status_code, response.text)
+                            sent = True
+                        except Exception as e:
+                            print("Failed to send message to Teams:", e)
+
+                        
+
                     
                     if i == 1:
                         decision_locked = st.session_state.get("support_decision_made", False)
-
-                        # Whether user interacted or not
-                        selected_decision = st.session_state.get("support_team_decision_radio", None)
-
                         options = ["Approve", "Revise", "Reject"]
 
-                        # Create a placeholder for the radio
-                        with st.container():
-                            if selected_decision is None:
-                                # No selection made yet – simulate a 'null' radio by using a dummy option
-                                display_options = ["-- Please select an option --"] + options
-                                fake_index = 0
-                                selected = st.radio(
-                                    "Support Team Action:",
-                                    display_options,
-                                    index=0,
-                                    key="support_team_decision_fake"
-                                )
-
-                                # If user selects something real
-                                if selected != display_options[0]:
-                                    st.session_state.support_team_decision_radio = selected
-                                    selected_decision = selected
-                            else:
-                                # If already selected, render normally
-                                st.radio(
-                                    "Support Team Action:",
-                                    options,
-                                    index=options.index(selected_decision),
-                                    disabled=decision_locked
-                                )
-
-                        # Optional UI handling
-                        st.session_state.support_decision = selected_decision
-
-                        # Decision-specific rendering
-                        if selected_decision == "Approve":
-                            parsed_json = {
-                                "approved_by_technical_support": True,
-                                "approval_date": formatted_now,
-                                "approved_content_title": st.session_state.selected_ticket,
-                                "approved_content": st.session_state.get('responder_agent_message', 'No responder message found')
-                            }
-                            st.session_state.revision_reason_input = st.session_state.get('responder_agent_message', 'No responder message found')
-                            formatted_json = render_custom_json(parsed_json)
-                            st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
-
-                        elif selected_decision == "Revise" and not decision_locked:
-                            st.text_area(
-                                "Support Team Feedback for Revision",
-                                placeholder="Please enter email revisions here...",
-                                key="revision_text_input"
+                        if "support_team_decision_radio" not in st.session_state:
+                            # Until a valid choice is made
+                            display_options = ["-- Please select an option --"] + options
+                            selected = st.radio(
+                                "Support Team Action:",
+                                display_options,
+                                index=0,
+                                key="support_team_decision_fake"
+                            )
+                            if selected != "-- Please select an option --":
+                                # Initialize the proper state
+                                st.session_state["support_team_decision_radio"] = selected
+                                st.rerun()  # 🔁 force re-render
+                        else:
+                            selected_decision = st.radio(
+                                "Support Team Action:",
+                                options,
+                                index=options.index(st.session_state["support_team_decision_radio"]),
+                                key="support_team_decision_radio",
+                                disabled=decision_locked
                             )
 
-                        elif selected_decision == "Reject":
-                            st.markdown("""
-                                <div class="gray-box">
-                                    <b>🛑 The support team has <u>selected</u> rejection.</b><br>
-                                    If you proceed to the next step, the process will be terminated.<br>
-                                    You can still change your decision before continuing.
-                                </div>
-                            """, unsafe_allow_html=True)
+                            # Optional alias for easier access
+                            st.session_state.support_decision = selected_decision
+
+                            # 🎯 Real-time content rendering
+                            if selected_decision == "Approve":
+                                parsed_json = {
+                                    "approved_by_technical_support": True,
+                                    "approval_date": formatted_now,
+                                    "approved_content_title": st.session_state.selected_ticket,
+                                    "approved_content": st.session_state.get('responder_agent_message', 'No responder message found')
+                                }
+                                st.session_state.revision_reason_input = st.session_state.get('responder_agent_message', 'No responder message found')
+                                formatted_json = render_custom_json(parsed_json)
+                                st.markdown(f'<div class="custom-json-box">{formatted_json}</div>', unsafe_allow_html=True)
+
+                            elif selected_decision == "Revise" and not decision_locked:
+                                st.text_area(
+                                    "Support Team Feedback for Revision",
+                                    placeholder="Please enter email revisions here...",
+                                    key="revision_text_input"
+                                )
+
+                            elif selected_decision == "Reject":
+                                st.markdown("""
+                                    <div class="gray-box">
+                                        <b>🛑 The support team has <u>selected</u> rejection.</b><br>
+                                        If you proceed to the next step, the process will be terminated.<br>
+                                        You can still change your decision before continuing.
+                                    </div>
+                                """, unsafe_allow_html=True)
+
+
 
 
 
@@ -755,6 +752,7 @@ if st.session_state.agent_steps:
             else:
                 # Default "Next" logic for other steps like Step 7, 9, etc.
                 if (not current == 3) & (st.session_state.get("support_team_decision_radio") !='Reject'):
+                    st.markdown("<div style='margin-top: 2em;'></div>", unsafe_allow_html=True)
                     if st.button("➡️ Next", key=f"hardcoded_next_{current}") and current < len(hardcoded_steps) - 1:
                         st.session_state.hardcoded_step_index += 1
                         st.rerun()
@@ -764,6 +762,7 @@ if st.session_state.agent_steps:
             if st.session_state.hardcoded_step_index >= len(hardcoded_steps) - 1:
                 col1, col2 = st.columns([1, 1])
                 with col1:
+                    st.markdown("<div style='margin-top: 2em;'></div>", unsafe_allow_html=True)
                     if st.button("🔁 Select Another Ticket"):
                         st.session_state.hardcoded_step_index = 0
                         st.session_state.ticket_chosen = False
@@ -782,7 +781,7 @@ if st.session_state.agent_steps:
                         st.session_state.support_decision = None
 
                         # Whether user interacted or not
-                        st.session_state.support_team_decision_radio = None
+                        #st.session_state.support_team_decision_radio = None
                         st.rerun()
 
 

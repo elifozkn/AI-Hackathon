@@ -116,9 +116,7 @@ Respond in VALID json format and make sure include all keys.:
           "draft_body: Write a professional support response to the user’s ticket using the ticket content and retrieved documents.
           Take only what is relevant from the retrieved documents, but do not summarize just give the information/instructions. Avoid suggesting consulting the manual or documentation as much as possible.
           If retrieved documents are none, ask for the specific model name, product type. End the response with Kind regards, Advantech Technical Support Team. }
-          "email_subject" :, 
-          "email_body" :
-          """,
+          }""",
         reflect_on_tool_use=True,
         model_client_stream=True,  # Enable streaming tokens from the model client.
     )
